@@ -3,6 +3,7 @@ const chalk = require('chalk');
 const table = require('console.table');
 const inquirer = require('inquirer');
 const ascii_text_generator = require('ascii-text-generator');
+const clear = require('console-clear');
 
 const input_text = "employee tracker";
 const ascii_text =ascii_text_generator(input_text,"2");
@@ -123,12 +124,12 @@ function promptManagers(managers){
   inquirer
       .prompt({
           type: "list",
-          name: "promptChoice",
+          name: "managerChoice",
           message: "Select Manager:",
           choices: managers
         })
       .then(answer => {
-          queryEmployeesByManager(answer.promptChoice);            
+          queryEmployeesByManager(answer.managerChoice);            
       });
 }
 
@@ -198,11 +199,11 @@ function addEmployee(){
                 
                 newEmployee.roleID = selectedRoleID;
                 
-                //somerghing off here
+                //fixxed?
                 const query = `
                 SELECT DISTINCT concat(manager.first_name, " ", manager.last_name) AS full_name, manager.id
                 FROM employee
-                RIGHT JOIN employee AS manager ON manager.id = employee.manager_id;`;
+                LEFT JOIN employee AS manager ON manager.id = employee.manager_id;`;
                    connection.query(query, (err, res) => {
                     if (err) throw err;
                     
