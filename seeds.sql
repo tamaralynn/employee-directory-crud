@@ -35,4 +35,4 @@ VALUES
 (2, "Upper Management"), 
 (3, "Store Management"), 
 (4, "Sales"), 
-(5, "IT")
+(5, "IT");
