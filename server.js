@@ -50,7 +50,7 @@ function initialPrompt(){
             type: "list",
             name: "initialOption",
             message: "Make a selection:",
-            choices: ["View All Employees", "View Employees by Department", "View All Employees by Manager", "View Roles", "View Departments", "Add Employee", "Add Roles", "Add Departments", "Remove Employee", "Remove Role", "Remove Department", "Update Employee Role", "Update Employee Manager", "View Total Utilized Budget By Department", chalk.red("Exit Program")]
+            choices: ["View All Employees", /*"View Employees by Department", "View All Employees by Manager",*/ "View Roles", "View Departments", "Add Employee", "Add Roles", "Add Departments", /*"Remove Employee", "Remove Role", "Remove Department", "Update Employee Role", "Update Employee Manager", "View Total Utilized Budget By Department",*/ chalk.red("Exit Program")]
           })
         .then(answer => {
             switch(answer.initialOption){
@@ -58,13 +58,13 @@ function initialPrompt(){
                 queryEmployeesAll();
                 break;
 
-                case "View Employees by Department":
-                queryDepartments();
-                break;
+                // case "View Employees by Department":
+                // queryDepartments();
+                //  break;
 
-                case "View Employees by Manager":
-                queryManagers();
-                break;
+                // case "View Employees by Manager":
+                // queryManagers();
+                // break;
 
                 case "View Roles":
                 queryRolesOnly();
@@ -86,28 +86,28 @@ function initialPrompt(){
                 addDepartment();
                 break;
 
-                case "Remove Employee":
-                removeEmployee();
-                break;
+                // case "Remove Employee":
+                // removeEmployee();
+                // break;
 
-                case "Remove Role":
-                removeRole();
-                break;
+                // case "Remove Role":
+                // removeRole();
+                // break;
 
-                case "Remove Department":
-                removeDepartment();
-                break;
+                // case "Remove Department":
+                // removeDepartment();
+                // break;
 
-                case "Update Employee Role":
-                updateEmployeeRole();
-                break;
+                // case "Update Employee Role":
+                // updateEmployeeRole();
+                // break;
 
-                case "Update Employee Manager":
-                updateEmployeeManager();
-                break;
+                // case "Update Employee Manager":
+                // updateEmployeeManager();
+                // break;
 
                 case "View Total Utilized Budget By Department":
-                viewTotalBudgetByDepartment();
+                viewDepartmentBudget();
                 break;
 
                 case "Exit":
@@ -115,32 +115,6 @@ function initialPrompt(){
                 process.exit();                
             }             
         });
-}
-
-function departmentsPrompt(departments){
-  inquirer
-      .prompt({
-          type: "list",
-          name: "departmentOption",
-          message: "Select Department:",
-          choices: departments
-        })
-      .then(answer => {
-          queryEmployeesByDepartment(answer.departmentOption);            
-      });
-}
-
-function promptManagers(managers){
-  inquirer
-      .prompt({
-          type: "list",
-          name: "managerChoice",
-          message: "Select Manager:",
-          choices: managers
-        })
-      .then(answer => {
-          queryEmployeesByManager(answer.managerChoice);            
-      });
 }
 
 function addEmployee(){
@@ -180,8 +154,8 @@ function addEmployee(){
         connection.query(query, (err, res) => {
             if (err) throw err;
             
-            const roles = [];
-            const roleTitles = [];
+            const roles = ['tech support'];
+            const roleTitles = ['IT'];
             for (let i = 0; i < res.length; i++) {
                 roles.push({
                     id: res[i].id,
@@ -195,7 +169,7 @@ function addEmployee(){
                 type: "list",
                 name: "rolePrompt",
                 message: "Select Role:",
-                choices: rolesTitles
+                choices: roleTitles
               })
             .then(answer => {
                 
@@ -217,8 +191,8 @@ function addEmployee(){
                    connection.query(query, (err, res) => {
                     if (err) throw err;
                     
-                    const managers = [];
-                    const managersNames = [];
+                    const managers = ["vitts"];
+                    const managersNames = ["butts"];
                     for (let i = 0; i < res.length; i++) {
                         managersNames.push(res[i].full_name);
                         managers.push({
@@ -265,6 +239,133 @@ function addEmployee(){
     });
 }
 
+function addDepartment() {
+    inquirer
+      .prompt([
+        {
+          name: "deptName",
+          type: "input",
+          message: "Enter new Department title:",
+          validate: async function confirmStringInput(input) {
+            if (input.trim() != "" && input.trim().length <= 15) {
+              return true;
+            }
+            return "Please limit your input to 15 characters.";
+          },
+        },
+      ])
+      .then((answer) => {
+        const query = `INSERT INTO department (name) VALUES (?);`;
+        connection.query(query, [answer.deptName], (err, res) => {
+            if (err) throw err;
+            console.log("  Department added successfully!")
+            queryDepartmentCallBack(function(departments) {
+                renderTable("departments", departments);
+            } )
+        })
+        
+    });
+}
+
+function queryDepartmentCallBack(callback){
+    const query = `SELECT department.name FROM department;`;
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+
+        const departments = [];
+        for (let i = 0; i < res.length; i++) {
+            departments.push(res[i].name);
+        }
+
+       callback(departments)
+    });
+}
+
+function addRole() {
+   
+   const departments = [];
+   const departmentsName = [];
+   
+   const query = `SELECT id, name FROM department`;
+   connection.query(query, (err, res) => {
+       if (err) throw err;
+       for (let i=0;i<res.length;i++) {
+           departments.push({
+              id:res[i].id,
+              name:res[i].name});
+           departmentsName.push(res[i].name);   
+       }
+   inquirer
+       .prompt([
+           {
+           name: "roleName",
+           type: "input",
+           message: "Enter new role title:",
+           validate: async function confirmStringInput(input) {
+               if (input.trim() != "" && input.trim().length <= 20) {
+               return true;
+               }
+               return "Please limit your input to 20 characters.";
+           },
+           },
+           {
+           name: "salary",
+           type: "input",
+           message: "Enter role salary:",
+           validate: (input) => {
+               if(!input.match(/^[0-9]+$/)) {
+                   return "Please enter a number";
+               }
+               return true;
+               }  
+           },
+           {
+           type: "list",
+           name: "roleDept",
+           message: "Select department:",
+           choices: departmentsName
+           },
+       ])
+       .then((answer) => {
+       
+           let deptID = departments.find((obj) => obj.name === answer.roleDept).id;
+           connection.query("INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)",
+           [answer.roleName, answer.salary, deptID], (err, res) => {
+               if (err) throw err; 
+               console.log(
+                   `${answer.roleName} was added to the ${answer.roleDept} department.`);
+                   queryRolesOnly();
+           });
+          
+       });
+   });
+} 
+
+function departmentsPrompt(departments){
+    inquirer
+        .prompt({
+            type: "list",
+            name: "departmentOption",
+            message: "Select Department:",
+            choices: departments
+          })
+        .then(answer => {
+            queryEmployeesByDepartment(answer.departmentOption);            
+        });
+  }
+  
+  function promptManagers(managers){
+    inquirer
+        .prompt({
+            type: "list",
+            name: "managerChoice",
+            message: "Select Manager:",
+            choices: managers
+          })
+        .then(answer => {
+            queryEmployeesByManager(answer.managerChoice);            
+        });
+  }
 
 function queryEmployeesAll(){
 
@@ -294,7 +395,60 @@ function queryEmployeesAll(){
     });
 }
 
+function queryRolesOnly() {
+    const query = `SELECT id, title FROM employeesdb.role;`;
 
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+        const tableData = [];
+        for (let i = 0; i < res.length; i++) {
+            tableData.push({ 
+                "ID": res[i].id,
+                "Roles": res[i].title
+            });
+        }
+
+        renderTable("All Roles", tableData);
+    });   
+}
+
+function queryDepartmentsOnly(){
+    const query = `SELECT id, department.name FROM department;`;
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+
+        const  tableData = [];
+        for (let i = 0; i < res.length; i++) {
+            tableData.push({
+                "ID": res[i].id,
+                "Departments": res[i].name
+            });
+        }
+
+        renderTable(`All Departments`, tableData);
+    });
+}
+
+function viewDepartmentBudget() {
+    const query = 
+    `select d.name "Department", SUM(r.salary) "BudgetUtilized" 
+    from role r
+    JOIN department d 
+    JOIN employee e 
+    where r.id = e.role_id and r.id = d.id group by r.id;`
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+      
+       const tableData = [];      
+       for (let i = 0; i < res.length; i++) {
+           tableData.push({
+               "Department": res[i].Department,
+               "Budget Utilized": res[i].BudgetUtilized
+           });
+        }
+        renderTable("Total Budget by Department", tableData);
+    });
+}
 
 
 init();
