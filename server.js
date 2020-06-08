@@ -450,5 +450,98 @@ function viewDepartmentBudget() {
     });
 }
 
+function updateEmployeeRole(){
+    
+    const updatedEmployee = {
+        id: 0,
+        roleID: 0, 
+    };
+
+    const query = `
+    SELECT id, concat(employee.first_name, " ", employee.last_name) AS employee_full_name
+    FROM employee ;`;
+    connection.query(query, (err, res) => {
+        if (err) throw err;
+        
+        let employees = [];
+        let employeesNames = [];
+        for (let i=0;i<res.length;i++){
+            employees.push({
+                id: res[i].id,
+                fullName: res[i].employee_full_name});
+            employeesNames.push(res[i].employee_full_name);
+        }
+        
+        inquirer
+        .prompt({
+            type: "list",
+            name: "employeeSelrcted",
+            message: "Select employee to update:",
+            choices: employeesNames
+          })
+        .then(answer => {
+
+            const selectedEmployee = answer.employeeSelrcted;
+            let selectedEmployeeID;
+            for (let i = 0; i < employees.length; i++) {
+              if (employees[i].fullName === selectedEmployee) {
+                selectedEmployeeID = employees[i].id;
+                break;
+              }
+            }
+            
+            updatedEmployee.id = selectedEmployeeID;
+            
+            const query = `SELECT role.title, role.id FROM role;`;
+            connection.query(query, (err, res) => {
+                if (err) throw err;
+                
+                const roles = [];
+                const rolesNames = [];
+                for (let i = 0; i < res.length; i++) {
+                    roles.push({
+                        id: res[i].id,
+                        title: res[i].title
+                    });
+                    rolesNames.push(res[i].title);
+                }
+                inquirer
+                .prompt({
+                    type: "list",
+                    name: "selectedRole",
+                    message: "Select Role:",
+                    choices: rolesNames
+                })
+                .then(answer => {
+                    
+                    const chosenRole = answer.selectedRole;
+                    let chosenRoleID;
+                    for (let i = 0; i < roles.length; i++) {
+                        if (roles[i].title === chosenRole){
+                            chosenRoleID = roles[i].id;
+                        }
+                    }
+                    
+                    updatedEmployee.roleID = chosenRoleID;
+                    
+                    const query = `UPDATE employee SET ? WHERE ?`;
+                    connection.query(query, [
+                        {
+                          role_id: updatedEmployee.roleID
+                        },
+                        {
+                          id: updatedEmployee.id
+                        }
+                        ], (err, res) => {
+                        if (err) throw err;
+                        console.log("Employee Role Updated");
+                       
+                        setTimeout(queryEmployeesAll, 500);
+                    });
+                });
+            });            
+        });
+    });
+}
 
 init();
